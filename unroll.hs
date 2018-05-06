@@ -12,10 +12,26 @@ tryStr = try . string
 
 
 main :: IO ()
-main = do
-  putStrLn "hello world"
+main = interact go
+
+go :: String -> String
+go str = fromRight $ runParser program empty "" str
 
 t p m = runParser p m ""
+
+program :: P
+program = do
+  fmap concat $ many1 stmt
+
+stmt :: P
+stmt = forLoop <|> simpleStmt
+
+simpleStmt :: P
+simpleStmt = do
+  s <- many space
+  b <- many1 (noneOf ";")
+  char ';'
+  return $ s ++ b ++ ";"
 
 k = t forLoop empty "for (i=0;i<3;i++) pr(i);"
 
@@ -24,8 +40,12 @@ forLoop = do
   tryStr "for" >> sp
   (var, a) <- header
   b <- body
+  char ';'
   env <- getState
-  return $ concatMap (subst' var env b) a
+  return $ concatMap
+      -- fromRight $ runParser program .....
+      (subst' var env $ b ++ ";")
+      a
 
 -- subst "i" empty "pr(i)" 3 = "pr(3)"
 subst' :: String -> M -> String -> Int -> String
@@ -53,7 +73,15 @@ substVar = do
       Just val -> show val
 
 body :: P
-body = many1 $ noneOf ";"
+--body = many1 $ noneOf ";"
+body = fmap concat $
+         many1 (bodyTerm <|> fmap (:[]) (noneOf ";"))
+
+bodyTerm :: P
+bodyTerm = do
+  s <- char '(' >> many1 (noneOf ")")
+  char ')'
+  return $ "(" ++ s ++ ")"
 
 idChar :: Parsec String M Char
 idChar = letter <|> digit <|> char '_'
@@ -128,19 +156,3 @@ termOpTerm = do
   return $ case op of
     '+' -> x+y
     '-' -> x-y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
