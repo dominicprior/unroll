@@ -54,7 +54,8 @@ k = t forLoop empty "for (i=0;i<3;i++) pr(i);"
 
 forLoop :: P
 forLoop = do
-  tryStr "for" >> sp
+  try $ sp >> string "for"
+  sp
   (var, a) <- header
   b <- body
   s <- many space
@@ -66,7 +67,7 @@ forLoop = do
 -- f "i" empty "pr(i)" 3 = "pr(3);"
 f :: String -> M -> String -> Int -> String
 f var env b val =
-  let str = subst' var env (b ++ ";") val
+  let str = subst' var env b val
   in fromRight $ runParser program empty "" str
 
 -- subst "i" empty "pr(i)" 3 = "pr(3)"
@@ -101,6 +102,7 @@ bodyStmt :: P
 bodyStmt = do
   b <- fmap concat $
          many1 (bodyTerm <|> bodyTerm' <|> fmap (:[]) (noneOf ";"))
+  char ';'
   return $ b ++ ";"
 
 bodyBrace :: P
