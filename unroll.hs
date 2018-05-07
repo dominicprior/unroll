@@ -43,9 +43,18 @@ forLoop = do
   char ';'
   env <- getState
   return $ concatMap
-      -- fromRight $ runParser program .....
-      (subst' var env $ b ++ ";")
+      (f var env b)
+      --(
+      --(fromRight $ runParser program env "") .
+      --(subst' var env $ b ++ ";")
+      --)
       a
+
+-- f "i" empty "pr(i)" 3 = "pr(3);"
+f :: String -> M -> String -> Int -> String
+f var env b val =
+  let str = subst' var env (b ++ ";") val
+  in fromRight $ runParser program empty "" str
 
 -- subst "i" empty "pr(i)" 3 = "pr(3)"
 subst' :: String -> M -> String -> Int -> String
