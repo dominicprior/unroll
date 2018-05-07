@@ -26,7 +26,21 @@ program = do
   fmap concat $ many1 stmt
 
 stmt :: P
-stmt = forLoop <|> simpleStmt
+stmt = forLoop <|> try assignment <|> simpleStmt
+
+assignment :: P
+assignment = do
+  sp
+  var <- many1 idChar
+  sp
+  char '='
+  sp
+  val <- fmap read $ many1 digit
+  sp
+  char ';'
+  sp
+  modifyState $ insert var val
+  return ""
 
 simpleStmt :: P
 simpleStmt = do
